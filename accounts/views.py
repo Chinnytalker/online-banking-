@@ -202,6 +202,9 @@ def dashboard(request):
             messages.success(request, "Your card request has been submitted.")
             return redirect('dashboard')
 
+        elif 'transfer' in request.POST:
+            return redirect('transfer_money')
+
         elif 'reply_to' in request.POST:
             reply_to_id = request.POST.get('reply_to')
             reply_content = request.POST.get('reply_content')
@@ -213,7 +216,6 @@ def dashboard(request):
                         user=request.user,
                         sender=request.user.username,
                         content=reply_content,
-                        is_reply=True,
                         parent=parent_message
                     )
                     logger.info(f"User {request.user.username} replied to message ID {reply_to_id}.")
@@ -230,8 +232,7 @@ def dashboard(request):
                 Message.objects.create(
                     user=request.user,
                     sender=request.user.username,
-                    content=admin_message,
-                    is_reply=False
+                    content=admin_message
                 )
                 logger.info(f"User {request.user.username} sent a message to admin.")
                 messages.success(request, "Your message has been sent to the admin.")

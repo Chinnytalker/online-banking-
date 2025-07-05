@@ -85,12 +85,8 @@
           <div class="action-buttons mt-3">
             <form method="POST">
               {% csrf_token %}
-              <button type="submit" name="transactions" class="btn btn-light">Transactions</button>
-              <button type="submit" name="top_up" class="btn btn-light">Top Up</button>
-              <button type="submit" name="send_money" class="btn btn-primary">Send Money</button>
               <button type="submit" name="deposit" class="btn btn-success">Deposit</button>
-              <button type="submit" name="history" class="btn btn-light">History</button>
-              <button type="submit" name="withdraw" class="btn btn-danger">Withdraw</button>
+              <button type="submit" name="transfer" class="btn btn-primary">Transfer</button>
               <button type="submit" name="request_card" class="btn btn-primary">Request a Card</button>
             </form>
           </div>
