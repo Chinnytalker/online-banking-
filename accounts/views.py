@@ -50,7 +50,7 @@ def register(request):
             user.save()
 
             try:
-                BankAccount.objects.create(user=user, is_frozen=False, account_type='Savings')
+                BankAccount.objects.create(user=user, account_type='Savings')
             except Exception as e:
                 logger.error(f"Error creating bank account for user {user.username}: {e}")
                 user.delete()
@@ -127,8 +127,8 @@ def login_view(request):
 
             login(request, user)
 
-
             # Check if bank account exists, but skip for superusers
+            bank_account = None
             if not user.is_superuser:
                 try:
                     bank_account = BankAccount.objects.get(user=user)
@@ -137,10 +137,14 @@ def login_view(request):
                     return redirect('index')
 
             # Notify user if account is frozen, but allow login
-
-            if not user.is_superuser:
-                if bank_account.is_frozen:
-                    messages.warning(request, "Your account is currently frozen. Some features may be restricted.")
+            if not user.is_superuser and bank_account:
+                if bank_account.status == "Frozen":
+                    messages.warning(
+                        request,
+                        "Your account is currently frozen. Some features may be restricted. "
+                        "<a href='{0}'>Contact admin</a> if you believe this is a mistake.".format(reverse('send_message')),
+                        extra_tags='safe'
+                    )
 
             return redirect('dashboard')
 
@@ -169,6 +173,15 @@ def dashboard(request):
         messages.error(request, "Bank account not found. Please contact support.")
         return redirect('index')
 
+    # If account is frozen, show clear warning and allow messaging admin
+    if account.status == "Frozen":
+        messages.warning(
+            request,
+            "Your account is currently frozen. Some features may be restricted. "
+            "<a href='{0}'>Contact admin</a> if you believe this is a mistake.".format(reverse('send_message')),
+            extra_tags='safe'
+        )
+
     messages_list = Message.objects.filter(user=request.user).order_by('-created_at')[:10]
     transactions = Transaction.objects.filter(account=account).order_by('-date')[:10] if account else []
     card_requests = CardRequest.objects.filter(user=request.user).order_by('-date_requested')
@@ -177,7 +190,7 @@ def dashboard(request):
     if request.method == 'POST':
         if 'withdraw' in request.POST:
             with transaction.atomic():
-                account.is_frozen = True
+                account.status = "Frozen"
                 account.save()
             logger.info(f"Account {account.account_number} frozen by {request.user.username}.")
             messages.success(request, "Your account has been frozen for withdrawal.")
