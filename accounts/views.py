@@ -31,7 +31,7 @@ def index(request):
 
 
 def register(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and not request.user.is_superuser:
         return redirect('dashboard')
 
     if request.method == 'POST':
@@ -112,7 +112,7 @@ def verify_email(request, token):
 
 
 def login_view(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and not request.user.is_superuser:
         return redirect('dashboard')
 
     if request.method == 'POST':
