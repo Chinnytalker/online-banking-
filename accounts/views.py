@@ -50,7 +50,7 @@ def register(request):
             user.save()
 
             try:
-                BankAccount.objects.create(user=user, is_frozen=False)
+                BankAccount.objects.create(user=user, is_frozen=False, account_type='Savings')
             except Exception as e:
                 logger.error(f"Error creating bank account for user {user.username}: {e}")
                 user.delete()
