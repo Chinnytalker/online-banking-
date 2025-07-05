@@ -127,16 +127,20 @@ def login_view(request):
 
             login(request, user)
 
-            # Check if bank account exists
-            try:
-                bank_account = BankAccount.objects.get(user=user)
-            except BankAccount.DoesNotExist:
-                messages.error(request, "Bank account not found. Please contact support.")
-                return redirect('index')
+
+            # Check if bank account exists, but skip for superusers
+            if not user.is_superuser:
+                try:
+                    bank_account = BankAccount.objects.get(user=user)
+                except BankAccount.DoesNotExist:
+                    messages.error(request, "Bank account not found. Please contact support.")
+                    return redirect('index')
 
             # Notify user if account is frozen, but allow login
-            if bank_account.is_frozen:
-                messages.warning(request, "Your account is currently frozen. Some features may be restricted.")
+
+            if not user.is_superuser:
+                if bank_account.is_frozen:
+                    messages.warning(request, "Your account is currently frozen. Some features may be restricted.")
 
             return redirect('dashboard')
 
@@ -155,17 +159,21 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
+    # Block superusers from accessing dashboard
+    if request.user.is_superuser:
+        messages.error(request, "Superusers cannot access the user dashboard.")
+        return redirect('index')
     try:
         account = BankAccount.objects.get(user=request.user)
     except BankAccount.DoesNotExist:
         messages.error(request, "Bank account not found. Please contact support.")
         return redirect('index')
 
-    # Fetch latest messages, transactions, card requests
     messages_list = Message.objects.filter(user=request.user).order_by('-created_at')[:10]
-    transactions = Transaction.objects.filter(account=account).order_by('-date')[:10]
+    transactions = Transaction.objects.filter(account=account).order_by('-date')[:10] if account else []
     card_requests = CardRequest.objects.filter(user=request.user).order_by('-date_requested')
 
+    # Handle sending a message to admin
     if request.method == 'POST':
         if 'withdraw' in request.POST:
             with transaction.atomic():
@@ -190,10 +198,10 @@ def dashboard(request):
                     parent_message = Message.objects.get(id=reply_to_id, user=request.user)
                     Message.objects.create(
                         user=request.user,
-                        sender=request.user.username,  # Use actual username
+                        sender=request.user.username,
                         content=reply_content,
                         is_reply=True,
-                        parent=parent_message  # Link reply to original message
+                        parent=parent_message
                     )
                     logger.info(f"User {request.user.username} replied to message ID {reply_to_id}.")
                     messages.success(request, "Reply sent.")
@@ -201,6 +209,21 @@ def dashboard(request):
                     messages.error(request, "Original message not found.")
             else:
                 messages.error(request, "Reply failed. Content missing.")
+            return redirect('dashboard')
+
+        elif 'send_admin_message' in request.POST:
+            admin_message = request.POST.get('admin_message')
+            if admin_message:
+                Message.objects.create(
+                    user=request.user,
+                    sender=request.user.username,
+                    content=admin_message,
+                    is_reply=False
+                )
+                logger.info(f"User {request.user.username} sent a message to admin.")
+                messages.success(request, "Your message has been sent to the admin.")
+            else:
+                messages.error(request, "Message content cannot be empty.")
             return redirect('dashboard')
 
     return render(request, 'accounts/dashboard.html', {
@@ -284,6 +307,9 @@ def send_message(request):
 
 @login_required
 def top_up(request):
+    if request.user.is_superuser:
+        messages.error(request, "Superusers cannot access the top-up page.")
+        return redirect('index')
     try:
         account = BankAccount.objects.get(user=request.user)
     except BankAccount.DoesNotExist:
@@ -298,15 +324,36 @@ def top_up(request):
             messages.error(request, "Invalid top-up amount.")
             return redirect('top_up')
 
+
         account.balance += amount
         account.save()
 
-        Transaction.objects.create(
+        transaction = Transaction.objects.create(
             account=account,
             amount=amount,
             type='credit',
             description='Top-up from external source'
         )
+
+        # Send top-up notification email
+        from django.utils import timezone
+        html_message = render_to_string('accounts/topup_notification.html', {
+            'user': request.user,
+            'amount': amount,
+            'account': account,
+            'date': timezone.now(),
+            'description': transaction.description,
+            'new_balance': account.balance,
+            'now': timezone.now(),
+        })
+        email = EmailMessage(
+            subject="Account Top-Up Notification",
+            body=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[request.user.email],
+        )
+        email.content_subtype = 'html'
+        email.send(fail_silently=True)
 
         messages.success(request, f"${amount:.2f} has been added to your account via top-up.")
         return redirect('dashboard')
@@ -318,6 +365,9 @@ def top_up(request):
 
 @login_required
 def deposit(request):
+    if request.user.is_superuser:
+        messages.error(request, "Superusers cannot access the deposit page.")
+        return redirect('index')
     try:
         account = BankAccount.objects.get(user=request.user)
     except BankAccount.DoesNotExist:
@@ -332,15 +382,36 @@ def deposit(request):
             messages.error(request, "Invalid deposit amount.")
             return redirect('deposit')
 
+
         account.balance += amount
         account.save()
 
-        Transaction.objects.create(
+        transaction = Transaction.objects.create(
             account=account,
             amount=amount,
             type='credit',
             description='Cash deposit'
         )
+
+        # Send deposit notification email
+        from django.utils import timezone
+        html_message = render_to_string('accounts/topup_notification.html', {
+            'user': request.user,
+            'amount': amount,
+            'account': account,
+            'date': timezone.now(),
+            'description': transaction.description,
+            'new_balance': account.balance,
+            'now': timezone.now(),
+        })
+        email = EmailMessage(
+            subject="Account Deposit Notification",
+            body=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[request.user.email],
+        )
+        email.content_subtype = 'html'
+        email.send(fail_silently=True)
 
         messages.success(request, f"${amount:.2f} has been deposited to your account.")
         return redirect('dashboard')
@@ -352,6 +423,9 @@ def deposit(request):
 
 @login_required
 def transaction_history(request):
+    if request.user.is_superuser:
+        messages.error(request, "Superusers cannot access the transaction history page.")
+        return redirect('index')
     try:
         account = BankAccount.objects.get(user=request.user)
     except BankAccount.DoesNotExist:

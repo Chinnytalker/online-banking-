@@ -1,161 +1,46 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Email Verification - Starlink Bank</title>
-  <meta name="description" content="">
-  <meta name="keywords" content="">
-
-  <!-- Favicons -->
-  <link href="{% static 'img/favicon2.ico' %}" rel="icon">
-  <link href="{% static 'img/apple-touch-icon.png' %}" rel="apple-touch-icon">
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-  <!-- Vendor CSS Files -->
-  <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-  <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
-
-  <!-- Main CSS File -->
-  <link href="{% static 'css/main.css' %}" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', Arial, sans-serif; background: #f4f6fa; color: #222; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #e0e0e0; padding: 32px; }
+    .brand { color: #007bff; font-weight: bold; font-size: 1.5em; letter-spacing: 1px; }
+    .btn { display: inline-block; background: #007bff; color: #fff !important; padding: 12px 28px; border-radius: 5px; text-decoration: none; font-weight: 500; margin: 18px 0; }
+    .btn:hover { background: #0056b3; }
+    .footer { margin-top: 32px; font-size: 0.95em; color: #888; text-align: center; }
+    ul { margin: 0 0 0 18px; }
+  </style>
 </head>
-
-<body class="dashboard-page">
-
-  <!-- Header -->
-  <header id="header" class="header d-flex align-items-center sticky-top">
-    <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
-      <a href="{% url 'index' %}" class="logo d-flex align-items-center me-auto me-xl-0">
-        <h1 class="sitename">Starlink Bank</h1>
-        <span>.</span>
-      </a>
-
-      <nav id="navmenu" class="navmenu">
-        <ul>
-          <li><a href="{% url 'index' %}" class="active">Home</a></li>
-          <li><a href="{% url 'index' %}#about">About</a></li>
-          <li><a href="{% url 'index' %}#services">Services</a></li>
-          <li><a href="{% url 'index' %}#faq">FAQs</a></li>
-          <li><a href="{% url 'index' %}#contact">Contact</a></li>
-        </ul>
-        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-      </nav>
-
-      <a class="btn-getstarted" href="{% url 'logout' %}">Logout</a>
+<body>
+  <div class="container">
+    <div style="text-align:center; margin-bottom: 24px;">
+      <span class="brand">Starlink Bank</span>
     </div>
-  </header>
-
-  <!-- Main Content -->
-  <div class="container mt-5">
-       <p>Dear {{ user.first_name }},</p>
-
-<p>
-  Thank you for creating an account with <strong>Starlink Bank</strong>, your trusted partner in secure and innovative online banking.
-</p>
-
-<p>
-  To ensure the safety of your account and to activate full access to our banking features, we kindly ask you to verify your email address. This helps us confirm that the information you provided is accurate and protects you against unauthorized access.
-</p>
-
-<p>
-  Please click the secure link below to complete your email verification process:
-</p>
-
-<p>
-  <a href="{{ verification_link }}" style="word-break: break-all; color: #007bff;">{{ verification_link }}</a>
-</p>
-
-<p>
-  If you did not initiate this registration, please disregard this message. Your account will not be activated until verification is completed.
-</p>
-
-<p>
-  Once your email is verified, you will be able to:
-  <ul>
-    <li>Log in to your personal or business dashboard</li>
-    <li>Access a wide range of banking services</li>
-    <li>Manage transactions and account settings</li>
-    <li>Receive important notifications and updates</li>
-  </ul>
-</p>
-
-<p>
-  For any questions or assistance, feel free to contact our support team at <a href="mailto:info@starlinkbank.com">info@starlinkbank.com</a> or visit our <a href="{% url 'index' %}#contact">Contact Us</a> page.
-</p>
-
-<p>
-  We’re excited to have you on board, and we look forward to serving you.
-</p>
-
-<p>
-  Warm regards,<br>
-  <strong>Starlink Bank Customer Service Team</strong>
-</p>
-
+    <p>Dear {{ user.first_name }},</p>
+    <p>Thank you for creating an account with <strong>Starlink Bank</strong>, your trusted partner in secure and innovative online banking.</p>
+    <p>To ensure the safety of your account and to activate full access to our banking features, we kindly ask you to verify your email address. This helps us confirm that the information you provided is accurate and protects you against unauthorized access.</p>
+    <p style="margin-bottom: 0.5em;">Please click the button below to complete your email verification process:</p>
+    <p style="text-align:center;">
+      <a href="{{ verification_link }}" class="btn">Verify Email</a>
+    </p>
+    <p style="font-size:0.97em; color:#555; word-break:break-all;">Or copy and paste this link into your browser:<br>
+      <span style="color:#007bff;">{{ verification_link }}</span>
+    </p>
+    <p>If you did not initiate this registration, please disregard this message. Your account will not be activated until verification is completed.</p>
+    <p>Once your email is verified, you will be able to:
+      <ul>
+        <li>Log in to your personal or business dashboard</li>
+        <li>Access a wide range of banking services</li>
+        <li>Manage transactions and account settings</li>
+        <li>Receive important notifications and updates</li>
+      </ul>
+    </p>
+    <p>For any questions or assistance, feel free to contact our support team at <a href="mailto:info@starlinkbank.com">info@starlinkbank.com</a>.</p>
+    <p>We’re excited to have you on board, and we look forward to serving you.</p>
+    <p style="margin-top: 2em;">Warm regards,<br><strong>Starlink Bank Customer Service Team</strong></p>
+    <div class="footer">&copy; {{ now|date:'Y' }} Starlink Bank. All Rights Reserved.</div>
   </div>
-
-  <!-- Footer -->
-  <footer id="footer" class="footer dark-background">
-    <div class="footer-top">
-      <div class="container">
-        <div class="row gy-4">
-          <div class="col-lg-4 col-md-6 footer-about">
-            <a href="{% url 'index' %}" class="logo d-flex align-items-center">
-              <span class="sitename">Starlink Bank Official Website</span>
-            </a>
-            <div class="footer-contact pt-3">
-              <p>A108 Adam Street</p>
-              <p>New York, NY 535022</p>
-              <p class="mt-3"><strong>Phone:</strong> <span>+1 5589 55488 55</span></p>
-              <p><strong>Email:</strong> <span>info@starlinkbank.com</span></p>
-            </div>
-          </div>
-
-          <div class="col-lg-2 col-md-3 footer-links">
-            <h4>Useful Links</h4>
-            <ul>
-              <li><a href="{% url 'index' %}">Home</a></li>
-              <li><a href="{% url 'index' %}#about">About us</a></li>
-              <li><a href="{% url 'index' %}#services">Services</a></li>
-              <li><a href="{% url 'register' %}">Open an Account</a></li>
-              <li><a href="#">Privacy policy</a></li>
-            </ul>
-          </div>
-
-          <div class="col-lg-2 col-md-3 footer-links">
-            <h4>Our Services</h4>
-            <ul>
-              <li><a href="{% url 'login' %}">Personal Banking</a></li>
-              <li><a href="{% url 'login' %}">Corporate Banking</a></li>
-              <li><a href="{% url 'login' %}">Business Banking</a></li>
-              <li><a href="{% url 'login' %}">Wealth Management</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="copyright text-center">
-      <div class="container d-flex flex-column flex-lg-row justify-content-center justify-content-lg-between align-items-center">
-        <div class="d-flex flex-column align-items-center align-items-lg-start">
-          <div>© Copyright <strong><span>Starlink Bank</span></strong>. All Rights Reserved</div>
-        </div>
-        <div class="social-links order-first order-lg-last mb-3 mb-lg-0">
-          <a href="#"><i class="bi bi-twitter"></i></a>
-          <a href="#"><i class="bi bi-facebook"></i></a>
-          <a href="#"><i class="bi bi-instagram"></i></a>
-          <a href="#"><i class="bi bi-linkedin"></i></a>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Vendor JS Files -->
-  <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 </body>
-
 </html>
