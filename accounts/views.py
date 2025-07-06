@@ -202,7 +202,16 @@ def dashboard(request):
             messages.success(request, "Your card request has been submitted.")
             return redirect('dashboard')
 
+        elif 'deposit' in request.POST:
+            if account.status == "Frozen":
+                messages.error(request, "Your account is currently frozen. You cannot deposit funds. <a href='{}'>Contact admin</a> if you believe this is a mistake.".format(reverse('send_message')), extra_tags='safe')
+                return redirect('dashboard')
+            return redirect('deposit')
+
         elif 'transfer' in request.POST:
+            if account.status == "Frozen":
+                messages.error(request, "Your account is currently frozen. You cannot transfer funds. <a href='{}'>Contact admin</a> if you believe this is a mistake.".format(reverse('send_message')), extra_tags='safe')
+                return redirect('dashboard')
             return redirect('transfer_money')
 
         elif 'reply_to' in request.POST:

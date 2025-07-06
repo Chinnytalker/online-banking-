@@ -19,8 +19,20 @@
     .sidebar { height: 100vh; background-color: #fff; padding: 20px; border-right: 1px solid #ddd; }
     .nav-link { color: #333; }
     .account-box { background: #007bff; color: #fff; padding: 25px; border-radius: 10px; }
-    .action-buttons .btn { margin-right: 10px; }
+    .action-buttons .btn { margin-right: 10px; margin-bottom: 10px; }
     .feature-box, .quick-info { background: #fff; padding: 20px; border-radius: 10px; text-align: center; }
+    @media (max-width: 991px) {
+      .sidebar { height: auto; border-right: none; border-bottom: 1px solid #ddd; padding: 10px; }
+      .col-md-2.sidebar { flex: 0 0 100%; max-width: 100%; margin-bottom: 20px; }
+      .col-md-10.p-4 { flex: 0 0 100%; max-width: 100%; padding: 10px !important; }
+      .account-box { padding: 15px; font-size: 1rem; }
+      .action-buttons .btn { width: 100%; margin-right: 0; }
+    }
+    @media (max-width: 575px) {
+      .account-box { font-size: 0.95rem; }
+      .sidebar { padding: 5px; }
+      .action-buttons .btn { font-size: 1rem; padding: 10px; }
+    }
   </style>
 </head>
 
