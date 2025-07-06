@@ -21,9 +21,13 @@ class User(AbstractUser):
     state = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
 
+
     # New fields
     next_of_kin = models.CharField(max_length=100, blank=True, null=True)  # Next of Kin
     occupation = models.CharField(max_length=100, blank=True, null=True)  # Occupation
+
+    # Avatar/profile picture
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, default='avatars/default.png')
 
     email_verified = models.BooleanField(default=False)
 
@@ -112,6 +116,7 @@ class Message(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    read = models.BooleanField(default=False)  # For notification tracking
 
     def __str__(self):
         return f"Message from {self.sender} to {self.user.username} at {self.created_at}"

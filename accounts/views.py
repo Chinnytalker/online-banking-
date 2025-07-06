@@ -183,6 +183,12 @@ def dashboard(request):
         )
 
     messages_list = Message.objects.filter(user=request.user).order_by('-created_at')[:10]
+    unread_messages = Message.objects.filter(user=request.user, read=False).order_by('-created_at')
+    unread_count = unread_messages.count()
+
+    # Mark all unread messages as read when dashboard is loaded
+    if unread_count > 0:
+        unread_messages.update(read=True)
     transactions = Transaction.objects.filter(account=account).order_by('-date')[:10] if account else []
     card_requests = CardRequest.objects.filter(user=request.user).order_by('-date_requested')
 
@@ -254,6 +260,8 @@ def dashboard(request):
         'messages': messages_list,
         'transactions': transactions,
         'card_requests': card_requests,
+        'unread_messages': unread_messages,
+        'unread_count': unread_count,
     })
 
 

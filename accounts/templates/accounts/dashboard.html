@@ -13,6 +13,8 @@
   <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
   <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
   <link href="{% static 'css/main.css' %}" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{% static 'js/dashboard-charts.js' %}"></script>
 
   <style>
     body { background-color: #f4f6fa; font-family: 'Roboto', sans-serif; }
@@ -38,22 +40,45 @@
 
 <body class="dashboard-page">
   <!-- Header -->
-  <header id="header" class="header d-flex align-items-center sticky-top">
-    <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
+  <header id="header" class="header d-flex align-items-center sticky-top bg-white shadow-sm">
+    <div class="container-fluid d-flex align-items-center justify-content-between py-2">
       <a href="{% url 'index' %}" class="logo d-flex align-items-center me-auto me-xl-0">
-        <h1 class="sitename">Starlink Bank</h1><span>.</span>
+        <img src="{% static 'img/logo.png' %}" alt="Logo" style="height:40px; margin-right:10px;">
+        <h1 class="sitename mb-0" style="font-size:1.5rem;">Starlink Bank</h1>
       </a>
-      <nav id="navmenu" class="navmenu">
-        <ul>
-          <li><a href="{% url 'index' %}" class="active">Home</a></li>
-          <li><a href="{% url 'index' %}#about">About</a></li>
-          <li><a href="{% url 'index' %}#services">Services</a></li>
-          <li><a href="{% url 'index' %}#faq">FAQs</a></li>
-          <li><a href="{% url 'index' %}#contact">Contact</a></li>
-        </ul>
-        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-      </nav>
-      <a class="btn-getstarted" href="{% url 'logout' %}">Logout</a>
+      <div class="d-flex align-items-center">
+        <div class="dropdown me-3">
+          <button class="btn btn-link position-relative" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-bell" style="font-size: 1.7rem;"></i>
+            {% if unread_count > 0 %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ unread_count }}</span>
+            {% endif %}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 320px; max-height: 400px; overflow-y: auto;">
+            <li class="dropdown-header">Unread Messages</li>
+            {% if unread_count == 0 %}
+              <li><span class="dropdown-item-text text-muted">No new notifications</span></li>
+            {% else %}
+              {% for msg in unread_messages %}
+                <li>
+                  <span class="dropdown-item">
+                    <strong>{{ msg.subject|default:'No Subject' }}</strong><br>
+                    {{ msg.content|truncatechars:60 }}<br>
+                    <small class="text-muted">{{ msg.created_at|date:"M d, Y H:i" }}</small>
+                  </span>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+              {% endfor %}
+            {% endif %}
+          </ul>
+        </div>
+        <div class="d-flex align-items-center me-3">
+          <img src="{% if request.user.avatar %}{{ request.user.avatar.url }}{% else %}{% static 'img/default-avatar.png' %}{% endif %}"
+               alt="Avatar" class="rounded-circle border" style="width:40px; height:40px; object-fit:cover;">
+        </div>
+        <span class="me-3 fw-bold">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+        <a class="btn btn-outline-primary" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+      </div>
     </div>
   </header>
 
@@ -61,19 +86,23 @@
   <div class="container-fluid">
     <div class="row">
       <!-- Sidebar -->
-      <div class="col-md-2 sidebar">
-        <h4 class="mb-4">Starlink Bank</h4>
-        <p><strong>{{ request.user.first_name }} {{ request.user.last_name }}</strong><br># {{ account.account_number }}<br>
+      <div class="col-md-2 sidebar d-none d-md-block">
+        <div class="text-center mb-4">
+          <img src="{% static 'img/logo.png' %}" alt="Logo" style="height:50px;">
+        </div>
+        <div class="mb-3">
+          <span class="fw-bold">{{ request.user.first_name }} {{ request.user.last_name }}</span><br>
+          <span class="text-muted small"># {{ account.account_number }}</span><br>
           <span class="badge bg-success">KYC Verified</span>
-        </p>
-        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm mb-3">Logout</a>
+        </div>
         <hr>
         <nav class="nav flex-column">
-          <a class="nav-link" href="#">Dashboard</a>
-          <a class="nav-link" href="#">Transactions</a>
-          <a class="nav-link" href="#">Cards</a>
-          <a class="nav-link" href="#">Local Transfer</a>
-          <a class="nav-link" href="#">International Wire</a>
+          <a class="nav-link" href="#"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+          <a class="nav-link" href="#"><i class="bi bi-arrow-left-right me-2"></i>Transactions</a>
+          <a class="nav-link" href="#"><i class="bi bi-credit-card me-2"></i>Cards</a>
+          <a class="nav-link" href="#"><i class="bi bi-cash-coin me-2"></i>Local Transfer</a>
+          <a class="nav-link" href="#"><i class="bi bi-globe me-2"></i>International Wire</a>
+          <a class="nav-link" href="#"><i class="bi bi-question-circle me-2"></i>Support</a>
         </nav>
       </div>
 
@@ -81,124 +110,164 @@
       <div class="col-md-10 p-4">
         <!-- Account Summary -->
         {% if account %}
-        <div class="account-box mb-4">
-          <h5>Available Balance</h5>
-          <h2>${{ account.balance|floatformat:2 }} USD</h2>
-          <p>Account Number: <strong>{{ account.account_number }}</strong> <span class="badge bg-light text-dark">{{ account.status }}</span></p>
-
-          <!-- Account Freezing Warning -->
+        <div class="account-box mb-4 shadow-sm p-4">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-1">Available Balance</h5>
+              <h2 class="mb-0">${{ account.balance|floatformat:2 }} <span class="fs-5 text-light">USD</span></h2>
+              <div class="small text-light">Account Number: <strong>{{ account.account_number }}</strong> <span class="badge bg-light text-dark">{{ account.status }}</span></div>
+              <div class="action-buttons mt-3">
+                <form method="POST" class="d-flex flex-wrap gap-2">
+                  {% csrf_token %}
+                  <button type="submit" name="deposit" class="btn btn-success"><i class="bi bi-plus-circle me-1"></i>Deposit</button>
+                  <button type="submit" name="transfer" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Transfer</button>
+                  <button type="submit" name="request_card" class="btn btn-warning text-dark"><i class="bi bi-credit-card me-1"></i>Request Card</button>
+                </form>
+              </div>
+            </div>
+            <div class="col-md-4 d-flex justify-content-center align-items-center">
+              <canvas id="balanceChart" width="120" height="120"></canvas>
+            </div>
+          </div>
           {% if account.is_frozen %}
             <div class="alert alert-danger mt-3">
               ⚠️ Your account is currently <strong>frozen</strong>. Please contact support to resolve this.
             </div>
           {% endif %}
-
-          <!-- Buttons -->
-          <div class="action-buttons mt-3">
-            <form method="POST">
-              {% csrf_token %}
-              <button type="submit" name="deposit" class="btn btn-success">Deposit</button>
-              <button type="submit" name="transfer" class="btn btn-primary">Transfer</button>
-              <button type="submit" name="request_card" class="btn btn-primary">Request a Card</button>
-            </form>
-          </div>
         </div>
         {% else %}
         <div class="alert alert-warning">No account information available.</div>
         {% endif %}
         <!-- Send Message to Admin -->
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
           <div class="card-body">
-            <h4>Send a Message to Admin</h4>
+            <h5 class="card-title mb-3"><i class="bi bi-envelope me-2"></i>Send a Message to Admin</h5>
             <form method="POST">
               {% csrf_token %}
               <div class="mb-3">
                 <textarea name="admin_message" class="form-control" placeholder="Type your message to admin..." required></textarea>
               </div>
-              <button type="submit" name="send_admin_message" class="btn btn-primary">Send Message</button>
+              <button type="submit" name="send_admin_message" class="btn btn-primary"><i class="bi bi-send me-1"></i>Send Message</button>
             </form>
           </div>
         </div>
 
         <!-- Transaction History -->
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
           <div class="card-body">
-            <h4>Transaction History</h4>
+            <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+              <h5 class="card-title mb-0"><i class="bi bi-clock-history me-2"></i>Recent Transactions</h5>
+              <div style="width: 220px; max-width: 100%;">
+                <canvas id="transactionsChart" height="80"></canvas>
+              </div>
+            </div>
             {% if transactions %}
-              <table class="table table-striped">
-                <thead>
-                  <tr><th>Date</th><th>Description</th><th>Amount</th><th>Type</th></tr>
-                </thead>
-                <tbody>
-                  {% for transaction in transactions %}
-                    <tr>
-                      <td>{{ transaction.date|date:"M d, Y H:i" }}</td>
-                      <td>{{ transaction.description }}</td>
-                      <td>${{ transaction.amount|floatformat:2 }}</td>
-                      <td>{{ transaction.get_type_display }}</td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr><th>Date</th><th>Description</th><th>Amount</th><th>Type</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for transaction in transactions %}
+                      <tr>
+                        <td>{{ transaction.date|date:"M d, Y H:i" }}</td>
+                        <td>{{ transaction.description }}</td>
+                        <td><span class="fw-bold {% if transaction.type == 'credit' %}text-success{% else %}text-danger{% endif %}">${{ transaction.amount|floatformat:2 }}</span></td>
+                        <td>
+                          {% if transaction.type == 'credit' %}
+                            <span class="badge bg-success">Credit</span>
+                          {% else %}
+                            <span class="badge bg-danger">Debit</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             {% else %}
-              <p>No transactions found.</p>
+              <p class="text-muted">No transactions found.</p>
             {% endif %}
           </div>
         </div>
+  <script>
+    // Pass data for charts from Django to JS
+    window.transactionsChartData = {
+      labels: [{% for transaction in transactions|slice:":6" %}'{{ transaction.date|date:"M d" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+      datasets: [{
+        label: 'Amount',
+        data: [{% for transaction in transactions|slice:":6" %}{{ transaction.amount }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+        backgroundColor: [{% for transaction in transactions|slice:":6" %}{% if transaction.type == 'credit' %}'#198754'{% else %}'#dc3545'{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}]
+      }]
+    };
+    window.balanceChartData = {
+      labels: ['Available', 'Frozen'],
+      datasets: [{
+        data: [{{ account.balance|floatformat:2 }}, {% if account.status == 'Frozen' %}{{ account.balance|floatformat:2 }}{% else %}0{% endif %}],
+        backgroundColor: ['#0d6efd', '#ffc107']
+      }]
+    };
+  </script>
 
         <!-- Card Requests -->
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
           <div class="card-body">
-            <h4>Card Request Status</h4>
+            <h5 class="card-title mb-3"><i class="bi bi-credit-card-2-front me-2"></i>Card Request Status</h5>
             {% if card_requests %}
-              <table class="table">
-                <thead><tr><th>Date</th><th>Status</th></tr></thead>
-                <tbody>
-                  {% for card in card_requests %}
-                    <tr>
-                      <td>{{ card.date_requested|date:"M d, Y" }}</td>
-                      <td>
-                        {% if card.status == 'approved' %}
-                          <span class="badge bg-success">Approved</span>
-                        {% elif card.status == 'pending' %}
-                          <span class="badge bg-warning text-dark">Pending</span>
-                        {% else %}
-                          <span class="badge bg-danger">Rejected</span>
-                        {% endif %}
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light"><tr><th>Date</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {% for card in card_requests %}
+                      <tr>
+                        <td>{{ card.date_requested|date:"M d, Y" }}</td>
+                        <td>
+                          {% if card.status == 'approved' %}
+                            <span class="badge bg-success">Approved</span>
+                          {% elif card.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                          {% else %}
+                            <span class="badge bg-danger">Rejected</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             {% else %}
-              <p>No card requests found.</p>
+              <p class="text-muted">No card requests found.</p>
             {% endif %}
           </div>
         </div>
 
         <!-- User Messages -->
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
           <div class="card-body">
-            <h4>Messages</h4>
+            <h5 class="card-title mb-3"><i class="bi bi-chat-dots me-2"></i>Messages</h5>
             {% if messages %}
-              <ul class="list-group">
+              <ul class="list-group list-group-flush">
                 {% for msg in messages %}
                   <li class="list-group-item">
-                    <strong>{{ msg.sender }}:</strong> {{ msg.content }} <br>
-                    <small class="text-muted">{{ msg.created_at|date:"M d, Y H:i" }}</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <strong class="text-primary">{{ msg.sender }}</strong> <span class="text-muted small">{{ msg.created_at|date:"M d, Y H:i" }}</span>
+                        <div>{{ msg.content }}</div>
+                      </div>
+                    </div>
                     {% if not msg.is_reply %}
                       <form method="POST" class="mt-2">
                         {% csrf_token %}
                         <input type="hidden" name="reply_to" value="{{ msg.id }}">
-                        <textarea name="reply_content" class="form-control" placeholder="Reply..."></textarea>
-                        <button type="submit" class="btn btn-sm btn-primary mt-1">Send Reply</button>
+                        <textarea name="reply_content" class="form-control mb-2" placeholder="Reply..."></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-reply"></i> Send Reply</button>
                       </form>
                     {% endif %}
                   </li>
                 {% endfor %}
               </ul>
             {% else %}
-              <p>No messages yet.</p>
+              <p class="text-muted">No messages yet.</p>
             {% endif %}
           </div>
         </div>
