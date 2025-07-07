@@ -11,8 +11,8 @@
   <meta name="keywords" content="">
 
   <!-- Favicons -->
-  <link href="/assets/img/favicon2.ico" rel="icon">
-  <link href="/assets/img/favicon2.ico" rel="apple-touch-icon">
+  <link href="{% static 'img/abstract-favicon.ico' %}" rel="icon">
+  <link href="{% static 'img/abstract-favicon.ico' %}" rel="apple-touch-icon">
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -36,6 +36,7 @@
   <header id="header" class="header d-flex align-items-center sticky-top">
     <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
       <a href="{% url 'index' %}" class="logo d-flex align-items-center me-auto me-xl-0">
+        <img src="{% static 'img/starlink-logo.png' %}" alt="Logo" style="height:40px; margin-right:10px;">
         <h1 class="sitename">Starlink Bank</h1>
         <span>.</span>
       </a>
