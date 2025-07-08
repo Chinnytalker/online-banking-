@@ -46,7 +46,10 @@ def register(request):
 
             user = form.save(commit=False)
             user.set_password(form.cleaned_data['password'])
-            user.is_active = False
+
+            # ✅ Make account active immediately
+            user.is_active = True
+            user.email_verified = True  # Remove this line if your User model doesn't use it
             user.save()
 
             try:
@@ -57,15 +60,8 @@ def register(request):
                 messages.error(request, "Error creating bank account. Please try again.")
                 return redirect('register')
 
-            try:
-                send_verification_email(request, user)
-                messages.success(request, "Registration successful! Please check your email to verify your account.")
-            except Exception as e:
-                logger.error(f"Error sending verification email: {e}")
-                user.delete()
-                messages.error(request, "Error sending verification email. Please try again.")
-                return redirect('register')
-
+            # ✅ Remove email verification logic
+            messages.success(request, "Registration successful! You can now log in.")
             return redirect('login')
     else:
         form = UserRegistrationForm()
@@ -73,42 +69,42 @@ def register(request):
     return render(request, 'accounts/register.html', {'form': form})
 
 
-def send_verification_email(request, user):
-    try:
-        token, _ = VerificationToken.objects.get_or_create(user=user)
-        verification_link = request.build_absolute_uri(reverse('verify_email', args=[token.token]))
-        subject = 'Verify Your Email'
-        html_message = render_to_string('accounts/email_verification.html', {
-            'user': user,
-            'verification_link': verification_link,
-        })
-        email = EmailMessage(
-            subject,
-            html_message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-        )
-        email.content_subtype = 'html'
-        email.send(fail_silently=False)
-    except Exception as e:
-        logger.error(f"Failed to send email to {user.email}: {e}", exc_info=True)
-        raise e  # re-raise to be caught in register view
+# def send_verification_email(request, user):
+#     try:
+#         token, _ = VerificationToken.objects.get_or_create(user=user)
+#         verification_link = request.build_absolute_uri(reverse('verify_email', args=[token.token]))
+#         subject = 'Verify Your Email'
+#         html_message = render_to_string('accounts/email_verification.html', {
+#             'user': user,
+#             'verification_link': verification_link,
+#         })
+#         email = EmailMessage(
+#             subject,
+#             html_message,
+#             settings.DEFAULT_FROM_EMAIL,
+#             [user.email],
+#         )
+#         email.content_subtype = 'html'
+#         email.send(fail_silently=False)
+#     except Exception as e:
+#         logger.error(f"Failed to send email to {user.email}: {e}", exc_info=True)
+#         raise e  # re-raise to be caught in register view
 
 
 
-def verify_email(request, token):
-    try:
-        verification_token = VerificationToken.objects.get(token=token)
-        user = verification_token.user
-        user.email_verified = True
-        user.is_active = True
-        user.save()
-        verification_token.delete()
-        messages.success(request, "Your email has been verified successfully! You can now log in.")
-        return redirect('login')
-    except VerificationToken.DoesNotExist:
-        messages.error(request, "Invalid or expired verification link.")
-        return redirect('index')
+# def verify_email(request, token):
+#     try:
+#         verification_token = VerificationToken.objects.get(token=token)
+#         user = verification_token.user
+#         user.email_verified = True
+#         user.is_active = True
+#         user.save()
+#         verification_token.delete()
+#         messages.success(request, "Your email has been verified successfully! You can now log in.")
+#         return redirect('login')
+#     except VerificationToken.DoesNotExist:
+#         messages.error(request, "Invalid or expired verification link.")
+#         return redirect('index')
 
 
 def login_view(request):
@@ -119,11 +115,13 @@ def login_view(request):
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            if not user.email_verified:
-                return render(request, 'accounts/login.html', {
-                    'form': form,
-                    'error': 'Please verify your email before logging in.'
-                })
+
+            # ✅ Remove email verification check
+            # if not user.email_verified:
+            #     return render(request, 'accounts/login.html', {
+            #         'form': form,
+            #         'error': 'Please verify your email before logging in.'
+            #     })
 
             login(request, user)
 
@@ -147,11 +145,11 @@ def login_view(request):
                     )
 
             return redirect('dashboard')
-
     else:
         form = AuthenticationForm()
 
     return render(request, 'accounts/login.html', {'form': form})
+
 
 
 
