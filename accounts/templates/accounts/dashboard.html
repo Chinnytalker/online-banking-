@@ -97,7 +97,10 @@
 {% if messages %}
   <div class="container mt-3">
     {% for message in messages %}
-      {% if not ('frozen' in message|stringformat:"s" and request.path != '/dashboard/') %}
+      {# Skip frozen messages unless on dashboard page #}
+      {% if 'frozen' in message.tags and request.path != '/dashboard/' %}
+        {# skip rendering frozen message outside dashboard #}
+      {% else %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
           {{ message|safe }}
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
