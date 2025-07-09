@@ -175,9 +175,7 @@ def dashboard(request):
     if account.status == "Frozen":
         messages.warning(
             request,
-            "Your account is currently frozen. Some features may be restricted. "
-            "<a href='{0}'>Contact admin</a> if you believe this is a mistake.".format(reverse('send_message')),
-            extra_tags='safe'
+            "Your account is currently frozen. Some features may be restricted. please Contact Admin to unfreeze your Account."
         )
 
     messages_list = Message.objects.filter(user=request.user).order_by('-created_at')[:10]
