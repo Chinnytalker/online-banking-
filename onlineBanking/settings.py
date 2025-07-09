@@ -166,7 +166,7 @@ DEFAULT_FROM_EMAIL = config("EMAIL_HOST_USER")
 
 
 # settings.py
-SECURE_SSL_REDIRECT = True  # Redirect all HTTP traffic to HTTPS
+SECURE_SSL_REDIRECT = False  # Redirect all HTTP traffic to HTTPS
 SESSION_COOKIE_SECURE = True  # Use secure cookies
 CSRF_COOKIE_SECURE = True  # Use secure CSRF cookies
 SECURE_HSTS_SECONDS = 31536000  # Enable HTTP Strict Transport Security (HSTS)
